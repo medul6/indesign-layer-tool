@@ -14,6 +14,10 @@ This is an AppleScript for doing various layer "actions" on all open documents. 
 * "Kopieren" -- copy selected layer(s)
 * "Zusammenführen" -- merge selected layer(s)
 
+After executing the script in InDesign you'll be presented with a "function" dialog.
+This is where you can choose from one of the functions above.
+After choosing a function you'll be presented a list of layers depending on the function you chose in the previous dialog.
+
 
 
 Contributing
