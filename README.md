@@ -1,4 +1,4 @@
-InDesign Layer Tool
+gliInDesign Layer Tool
 =============
 
 Description
@@ -33,7 +33,7 @@ File-Formats
     
 Localization
 -----------
-    At the moment the script is mixed, english and german. with the documentation beeing in german but most used Strings in german.
+    At the moment the script is mixed, english and german. with the documentation beeing in english but most used Strings in german.
 
 Installation
 -----------
