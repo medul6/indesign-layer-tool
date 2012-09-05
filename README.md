@@ -25,12 +25,20 @@ Contributing
 
 Want to contribute? Great! You sure know what to do, but this is my first repository so I don't know if I am doing this right :)
 
-
+File-Formats
+-----------
+    Normally I use the *.scpt Format because it it precompiled but at the same time contains the code and viewable via QuickLook. 
+    I'm also commiting an *.applescript File, just because it it readable on github and the precompiled not.
+    They should be in sync, always.
+    
+Localization
+-----------
+    At the moment the script is mixed, english and german. with the documentation beeing in german but most used Strings in german.
 
 Installation
 -----------
 
-    put the files in the application folder "Adobe InDesign CS5" > "Scripts" > "Scripts Panel"
+    put the file in the application folder "Adobe InDesign CS5" > "Scripts" > "Scripts Panel"
 
 
 Usage
