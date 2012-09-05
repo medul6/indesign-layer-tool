@@ -1,4 +1,4 @@
-gliInDesign Layer Tool
+InDesign Layer Tool
 =============
 
 Description
