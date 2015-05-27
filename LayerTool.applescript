@@ -1,5 +1,5 @@
 -- LayerTool for InDesign
--- version 2.9.5
+-- version 2.9.6
 
 -- created by medul6, Michael Heck, 2012
 -- open sourced on August 10th, 2012 on Github > check the LICENSE.txt and README.md in the repository for detailed information
@@ -52,17 +52,21 @@ tell application id "com.adobe.InDesign"
 	end repeat
 	
 	-- the deduplicting function removes the duplicates from the readable names list
-	deduplicator(reverse of layerNameList) of me
+	my deduplicator(reverse of layerNameList)
 	
 	-- this will display a dialog in which the user can select the desired function of this tool
-	functionChooser() of me
+	my functionChooser()
 	
 	if stopBool is true then
-		--displayTheEnd() of me
+		--my displayTheEnd()
 		--my displayNotificationShort("Fertig!", ((item 1 of functionChoice) as string))
 		set chosenLayerNotification to "Ebenen: "
 		repeat with x from 1 to count chosenLayer
-			set chosenLayerNotification to chosenLayerNotification & item x of chosenLayer & "/" --(ASCII character 10)
+			if (count chosenLayer) > 1 then
+				set chosenLayerNotification to chosenLayerNotification & item x of chosenLayer & "/" --(ASCII character 10)
+			else if (count chosenLayer) = 1 then
+				set chosenLayerNotification to chosenLayerNotification & item x of chosenLayer
+			end if
 		end repeat
 		my displayNotificationLong("Fertig!", ((item 1 of functionChoice) as string), (chosenLayerNotification as string))
 	end if
@@ -85,34 +89,63 @@ end deduplicator
 
 -- the functionChooser shows the user a list dialog with the functions of the script. after choosing the desired function gets called (together with one or more arguments)
 on functionChooser()
-	set functionChoice to choose from list {"Einblenden", "Ausblenden", "LЪschen", "Umbenennen", "Verteilen", "ZusammenfЯhren", "Sperren", "Entsperren"} default items functionChoice with prompt "Funktion wКhlen:" OK button name "Weiter!"
+	set functionChoice to choose from list {"Einblenden", "Ausblenden", "LЪschen", "Umbenennen", "Verteilen", "ZusammenfЯhren", "Sperren", "Entsperren", "AuswКhlen"} default items functionChoice with prompt "Funktion wКhlen:" OK button name "Weiter!"
 	
 	if the functionChoice = {"Einblenden"} then
 		set functionChoiceBool to true
-		layerVisibler(functionChoice, functionChoiceBool) of me
+		my layerVisibler(functionChoice, functionChoiceBool)
 	else if the functionChoice = {"Ausblenden"} then
 		set functionChoiceBool to false
-		layerVisibler(functionChoice, functionChoiceBool) of me
+		my layerVisibler(functionChoice, functionChoiceBool)
 	else if the functionChoice = {"LЪschen"} then
-		layerDeleter(functionChoice) of me
+		my layerDeleter(functionChoice)
 	else if the functionChoice = {"Umbenennen"} then
-		layerNamer(functionChoice) of me
+		my layerNamer(functionChoice)
 	else if the functionChoice = {"Verteilen"} then
-		pageCountCheck() of me --check the pageCount of all documents before copying
+		my pageCountCheck() --check the pageCount of all documents before copying
 		if pageCountBool is true then -- let the copying begin, or not
-			layerCopier(functionChoice) of me
+			my layerCopier(functionChoice)
 		end if
 	else if the functionChoice = {"ZusammenfЯhren"} then
-		layerMerger(functionChoice) of me
+		my layerMerger(functionChoice)
 	else if the functionChoice = {"Sperren"} then
 		set functionChoiceBool to true
-		layerLocker(functionChoice, functionChoiceBool) of me
+		my layerLocker(functionChoice, functionChoiceBool)
 	else if the functionChoice = {"Entsperren"} then
 		set functionChoiceBool to false
-		layerLocker(functionChoice, functionChoiceBool) of me
+		my layerLocker(functionChoice)
+	else if the functionChoice = {"AuswКhlen"} then
+		my setActiveLayer(functionChoice)
 	end if
 	
 end functionChooser
+
+
+-- еееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееее
+
+on setActiveLayer(functionChoice)
+	set buttonName to functionChoice & "!" as text
+	
+	if chosenLayer = missing value then
+		set chosenLayer to {""}
+	else if (count chosenLayer) > 1 then
+		--set chosenLayer to last item of chosenLayer
+		set chosenLayer to {""}
+	end if
+	
+	set chosenLayer to choose from list (reverse of deduplicatedLayerNames) default items chosenLayer with prompt "Ebene wКhlen:" OK button name buttonName
+	
+	if the result is not false then
+		repeat with x from 1 to count openDocuments
+			try
+				tell application id "com.adobe.InDesign"
+					set active layer of openDocuments's item x to layer (chosenLayer as string) of openDocuments's item x
+				end tell
+			end try
+		end repeat
+		set stopBool to true
+	end if
+end setActiveLayer
 
 -- еееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееее
 
@@ -165,7 +198,7 @@ on layerNamer(functionChoice)
 	
 	if the result is not false then
 		
-		textInput() of me
+		my textInput()
 		
 		if dieAntwort = "" then
 			return
@@ -206,17 +239,25 @@ on layerCopier(functionChoice)
 			--repeat with z from 1 to count chosenLayer -- this iterates through the layers that are chosen (one or more)
 			repeat with z from (count chosenLayer) to 1 by -1 -- this reverse iterates through the layers that are chosen (one or more)
 				set chosenLayerRepeat to item z of the chosenLayer
-				set currentLayerColor to layer color of layer chosenLayerRepeat of activeDocument
+				--set currentLayerColor to layer color of layer chosenLayerRepeat of activeDocument
 				-- I had to store the items in a variable to be able to reverse the duplication (if possible I'll change this in the future)
 				set duplicateLoopVariable to (every item of all page items of activeDocument whose (name of its item layer is chosenLayerRepeat) and (parent's class is spread))
 				repeat with y from 1 to count otherDocuments -- this iterates through the open documents (one or more)
 					
 					-- first check if the layer exists in the target document, if not create one
-					if not (layer chosenLayerRepeat of otherDocuments's item y exists) then make new layer of otherDocuments's item y with properties {name:chosenLayerRepeat, layer color:currentLayerColor}
+					if not (layer chosenLayerRepeat of otherDocuments's item y exists) then make new layer of otherDocuments's item y with properties {name:chosenLayerRepeat} --", layer color:currentLayerColor"
 					duplicate (reverse of duplicateLoopVariable) to layer chosenLayerRepeat of otherDocuments's item y
 					
+					set layer color of layer chosenLayerRepeat of otherDocuments's item y to layer color of layer chosenLayerRepeat of activeDocument -- this sets "layer color" to the original
+					set ignore wrap of layer chosenLayerRepeat of otherDocuments's item y to ignore wrap of layer chosenLayerRepeat of activeDocument -- this sets "ignore wrap" to the original
+					set lock guides of layer chosenLayerRepeat of otherDocuments's item y to lock guides of layer chosenLayerRepeat of activeDocument -- this sets "lock guides" to the original
+					set locked of layer chosenLayerRepeat of otherDocuments's item y to locked of layer chosenLayerRepeat of activeDocument -- this sets "locked" to the original
+					set printable of layer chosenLayerRepeat of otherDocuments's item y to printable of layer chosenLayerRepeat of activeDocument -- this sets "printable" to the original
+					set show guides of layer chosenLayerRepeat of otherDocuments's item y to show guides of layer chosenLayerRepeat of activeDocument -- this sets "show guides" to the original
+					set visible of layer chosenLayerRepeat of otherDocuments's item y to visible of layer chosenLayerRepeat of activeDocument -- this sets "visible" to the original
+					
 				end repeat
-				set the layer color of layer chosenLayerRepeat of otherDocuments's item y to currentLayerColor -- I like my layers clean
+				--set the layer color of layer chosenLayerRepeat of otherDocuments's item y to currentLayerColor -- I like my layers clean
 			end repeat
 			set stopBool to true
 		end if
