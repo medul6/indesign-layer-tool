@@ -1,5 +1,5 @@
 -- LayerTool for InDesign
--- version 2.9.6
+-- version 2.9.7
 
 -- created by medul6, Michael Heck, 2012
 -- open sourced on August 10th, 2012 on Github > check the LICENSE.txt and README.md in the repository for detailed information
@@ -16,10 +16,16 @@ global layerNameListActiveDoc
 global dieAntwort
 global pageCountBool
 global stopBool
+global everyLayer
+global bottomLayer
+global topLayer
+global nextLayer
+global previousLayer
 --global chosenLayerNotification
 
 --properties!
 property functionChoice : {"Einblenden"}
+property whichDirection : {"In den Hintergrund"}
 property chosenLayer : missing value
 
 -- еееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееее
@@ -89,7 +95,7 @@ end deduplicator
 
 -- the functionChooser shows the user a list dialog with the functions of the script. after choosing the desired function gets called (together with one or more arguments)
 on functionChooser()
-	set functionChoice to choose from list {"Einblenden", "Ausblenden", "LЪschen", "Umbenennen", "Verteilen", "ZusammenfЯhren", "Sperren", "Entsperren", "AuswКhlen"} default items functionChoice with prompt "Funktion wКhlen:" OK button name "Weiter!"
+	set functionChoice to choose from list {"Einblenden", "Ausblenden", "LЪschen", "Umbenennen", "Verteilen", "ZusammenfЯhren", "Sperren", "Entsperren", "AuswКhlen", "Bewegen"} default items functionChoice with prompt "Funktion wКhlen:" OK button name "Weiter!"
 	
 	if the functionChoice = {"Einblenden"} then
 		set functionChoiceBool to true
@@ -115,15 +121,96 @@ on functionChooser()
 		set functionChoiceBool to false
 		my layerLocker(functionChoice)
 	else if the functionChoice = {"AuswКhlen"} then
-		my setActiveLayer(functionChoice)
+		my layerActivator(functionChoice)
+	else if the functionChoice = {"Bewegen"} then
+		my layerMover(functionChoice)
 	end if
 	
 end functionChooser
 
+-- еееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееее
+
+on layerMover(functionChoice)
+	set buttonName to functionChoice & "!" as text
+	
+	if chosenLayer = missing value then
+		set chosenLayer to {""}
+	else if (count chosenLayer) > 1 then
+		--set chosenLayer to last item of chosenLayer
+		set chosenLayer to {""}
+	end if
+	
+	set chosenLayer to choose from list (reverse of deduplicatedLayerNames) default items chosenLayer with prompt "Ebene wКhlen:" OK button name buttonName --with multiple selections allowed
+	
+	if the result is false then
+		set stopBool to false
+	else
+		set stopBool to true
+	end if
+	
+	if the stopBool is not false then
+		
+		set whichDirection to choose from list {"In den Vordergrund", "Nach vorne", "Nach hinten", "In den Hintergrund"} default items whichDirection with prompt "Wohin bewegen:" OK button name buttonName
+		
+		tell application id "com.adobe.InDesign"
+			if the result is not false then
+				
+				--repeat with x from 1 to count chosenLayer
+				repeat with x from (count chosenLayer) to 1 by -1 --iterates in reverse
+					
+					repeat with y from 1 to count openDocuments
+						set everyLayer to every layer of openDocuments's item y
+						set bottomLayer to name of last item of everyLayer
+						set topLayer to name of first item of everyLayer
+						
+						
+						repeat with aLayer in everyLayer
+							--try							
+							if index of aLayer is equal to ((index of layer (chosenLayer's item x) of openDocuments's item y) + 1) then
+								set nextLayer to name of aLayer
+							else if index of aLayer is equal to ((index of layer (chosenLayer's item x) of openDocuments's item y) - 1) then
+								set previousLayer to name of aLayer
+							end if
+							--end try
+						end repeat
+						
+						if whichDirection = {"In den Vordergrund"} then
+							--send to top
+							tell layer (chosenLayer's item x) of openDocuments's item y
+								move to before layer topLayer of openDocuments's item y
+							end tell
+						else if whichDirection = {"Nach vorne"} then
+							--send up
+							tell layer (chosenLayer's item x) of openDocuments's item y
+								move to before layer previousLayer of openDocuments's item y
+							end tell
+						else if whichDirection = {"Nach hinten"} then
+							--send down
+							tell layer (chosenLayer's item x) of openDocuments's item y
+								move to after layer nextLayer of openDocuments's item y
+							end tell
+						else if whichDirection = {"In den Hintergrund"} then
+							--send to bottom
+							tell layer (chosenLayer's item x) of openDocuments's item y
+								move to after layer bottomLayer of openDocuments's item y
+							end tell
+						end if
+						
+					end repeat
+					
+				end repeat
+				
+				set stopBool to true
+			end if
+		end tell
+		
+	end if
+	
+end layerMover
 
 -- еееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееее
 
-on setActiveLayer(functionChoice)
+on layerActivator(functionChoice)
 	set buttonName to functionChoice & "!" as text
 	
 	if chosenLayer = missing value then
@@ -145,7 +232,7 @@ on setActiveLayer(functionChoice)
 		end repeat
 		set stopBool to true
 	end if
-end setActiveLayer
+end layerActivator
 
 -- еееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееее
 
